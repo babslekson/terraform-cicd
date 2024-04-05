@@ -67,3 +67,22 @@ docker run -d -p 8080:8080 --name jenkins-server jenkins-server
 6. install suggested plugins, create first admin user and access jenkins
 ![jenkins-homepage](screenshot/jhome.png)
 
+# Setting Up Jenkins for Terraform CI/CD
+## Jenkins pipelines for terraform
+
+Now, let's dive into setting up a CI/CD pipeline specifically tailored for Terraform. This will streamline infrastructure changes efficiently. Here are the key benefits: 
+Automated infrastructure deployment
+Fast feedback Loop
+Continuous testing
+Enhanced Collaboration and Productivity: Facilitate teamwork among team members.
+Accelerated release cycle
+Risk Reduction: Minimize risks in production environments.
+## Set up Git repository with Terraform code
+
+To do this project, you need existing terraform codem if you dont have one, you can use the code from this Github repo [here](https://github.com/babslekson/terraform-aws-pipeline.git) - It provisions kubernetes cluster using EKS
+
+Note: Make sure you update the backend configuration
+
+## Connect Github repo to Jenkins
+1. install jenkins Github plugins
+2. To ensure seemless and efficient pipelone within jenkins install terraform plugins and AWS Credentials plugins. ( Note: i am using AWS as my provider)
