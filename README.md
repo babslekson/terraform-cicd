@@ -86,3 +86,16 @@ Note: Make sure you update the backend configuration
 ## Connect Github repo to Jenkins
 1. install jenkins Github plugins
 2. To ensure seemless and efficient pipelone within jenkins install terraform plugins and AWS Credentials plugins. ( Note: i am using AWS as my provider)
+![git-plug](screenshot/gitplug.png)
+
+![awsCred-access](screenshot/awscred.png)
+
+# Configure Github Credentials in Jenkins
+To enable Jenkins to access GitHub repositories, we need to store GitHub credentials in Jenkins. This allows Jenkins to authenticate and interact with GitHub repositories, even if they are private. 
+1. Generate access token from github and save in a notepad for use later
+
+![access-token](screenshot/accesstoken.png)
+
+2. In Jenkins, navigate to "Manage Jenkins" -> Click on "Credentials". click on the arrow next to global and select "add credentials".  Add your credentials (username, password and the access token generated earlier)
+3. Create a second  credentials for AWS secret and access key
+![credentials](screenshot/credentials.png)
