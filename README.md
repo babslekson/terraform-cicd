@@ -97,5 +97,180 @@ To enable Jenkins to access GitHub repositories, we need to store GitHub credent
 ![access-token](screenshot/accesstoken.png)
 
 2. In Jenkins, navigate to "Manage Jenkins" -> Click on "Credentials". click on the arrow next to global and select "add credentials".  Add your credentials (username, password and the access token generated earlier)
+
 3. Create a second  credentials for AWS secret and access key
 ![credentials](screenshot/credentials.png)
+4. Set Up a Jenkins Multibranch pipeline, select type of source of the code (github), add the repo url, jenkinsfile and click on save. (Note: I already have the jenkins pipeline configuration file in my repo which will be explained later on in this documentation)
+![multibranch](screenshot/multibranch.png)
+![repo-scan](screenshot/reposcan.png) 
+5. Build project and check the console output
+![output](screenshot/output.png)
+![main-branch](screenshot/mainpipeline.png)
+
+## Jenkinsfile
+The Jenkinsfile acts as a smart guide, taking care of tasks, automating the process of code checkout and handling infrastructure updates through Terraform. It ensures that we follow a clear process for reviewing and implementing these changes. For critical environments such as production, it adds an extra layer of safety by prompting for manual confirmation before making any significant alterations.
+### Content of Jenkinsfile
+```bash
+pipeline {
+    agent any
+
+    environment {
+        TF_CLI_ARGS = '-no-color'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                script {
+                    withCredentials([aws(credentialsId: 'AWS_CRED', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        echo "Initializing Terraform..."
+                        sh 'terraform init'
+                        echo "Generating terraform plan"
+                        sh 'terraform plan -out=tfplan'
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            when {
+                expression { env.BRANCH_NAME == 'main' && currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null }
+            }
+            steps {
+                script {
+        //             // Ask for manual confirmation before applying changes
+                     input message: 'Do you want to apply changes?', ok: 'Yes'
+                     echo " Applying Terraform changes"
+                    withCredentials([aws(credentialsId: 'AWS_CRED', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+
+                
+                        sh 'terraform apply tfplan'
+                    }
+                }
+            }
+        }
+    }
+}
+```
+Here is a brief explanation of each stage 
+Checkout: This stage retrieves the source code from the repository.
+Terraform Plan: It initializes Terraform and generates a plan for infrastructure changes.
+Terraform Apply: This stage applies the Terraform changes. It's triggered only for the 'main' branch and requires manual confirmation before applying changes.
+Overall, this pipeline ensures a systematic approach to managing infrastructure changes while adding an extra layer of safety for critical environments.
+
+## Enhancing and extending the pipeline
+
+In addition to enhancing the existing pipeline, we will create a new branch to showcase Jenkins' capabilities. If the pipeline for the new branch fails, it will prevent the creation of resources, demonstrating the power of Jenkins in ensuring the stability and reliability of our infrastructure. The updated pipeline script will include additional stages to introduce new functionality, improve code clarity, and adhere to best practices in CI/CD pipelines
+
+1. new branch named **enhance-terraform-apply** was created.
+2. enhance the pipeline by adding logging to track the progress of the pipeline within both terraform plan & apply
+3.  introduced a new stage in the pipeline script called 'Lint Code' which precedes the 'Terraform Plan' stage. This stage validates the syntax, consistency, and correctness of Terraform configuration files within the directory where it is executed. It specifically employs the 'terraform validate' command for this purpose. Notably, this stage does not involve accessing any remote services.
+4. Incorporated into the pipeline script is a final stage called 'Cleanup', which executes irrespective of the success or failure of preceding stages. Additionally, error handling has been implemented throughout the script to gracefully manage failures. Furthermore, comments have been strategically added to the pipeline script, providing clarity on each stage's purpose and elucidating important commands used. This enhances the maintainability and comprehensibility of the pipeline.
+
+```bash
+
+pipeline {
+    agent any  // Defines that this pipeline can run on any available agent
+
+    environment {
+        TF_CLI_ARGS = '-no-color' // Sets Terraform CLI arguments to disable color output
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                    // Checkout the source code from the repository
+                    checkout scm
+                }
+            }
+        }
+        stage('Lint Code') {
+            steps {
+                script {
+                    withCredentials([aws(credentialsId: 'AWS_CRED', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                         // Validate the syntax, consistency, and correctness of Terraform configuration files
+                        echo "Validating Terraform configuration..."
+                        sh 'terraform init'
+                        sh 'terraform validate' 
+                        echo "Terraform code linting completed"
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                script {
+                    withCredentials([aws(credentialsId: 'AWS_CRED', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                        echo "Initializing Terraform..."
+                        sh 'terraform init'
+                        echo "Generating terraform plan"
+                        sh 'terraform plan -out=tfplan'
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            when {
+                expression { env.BRANCH_NAME == 'main' && currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null }
+            }
+            steps {
+                script {
+                 // Automatic confirmation 
+                    
+                     echo " Applying Terraform changes"
+                    withCredentials([aws(credentialsId: 'AWS_CRED', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+
+                
+                        sh 'terraform apply -auto-approve'
+                    }
+                }
+            }
+
+            post {
+                success {
+                    // If Terraform apply succeeds, perform cleanup
+                    cleanup()
+                }
+                failure {
+                    // If Terraform apply fails, handle the error gracefully
+                    echo 'Terraform apply failed. Sending notification...'
+                    // Add code to send notification or log detailed error messages
+                    cleanup()
+                }
+            }
+        }
+        
+
+        stage('Cleanup') {
+            steps {
+                script {
+                    // Clean up any temporary files or state
+                    echo 'Cleaning up...'
+                    // Add commands to clean up any temporary files or state
+                }
+            }
+        }
+    }
+}
+
+```
+
+Push all changes to the branch.
+
+Navigate to jenkins to see if new branch pipeline has been build.
+![en-build](screenshot/enhancebranch.png)
+![en-output](screenshot/enoutput.png)
+![dashboard](screenshot/dashboard.png) 
+
+ END
