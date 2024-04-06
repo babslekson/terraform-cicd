@@ -1,5 +1,5 @@
 # Implementing CI/CD pipeline for Terraform using Jenkins
-CI?CD pipeline for terraform helps automate the process of building, testing, and deploying changes to infrastructure. It makes everything faster, more reliable, and consistent across different environments. We will use Jenkins along with Terraform, which lets us write code to define our infrastructure. This setup helps us make sure that our infrastructure can be easily reproduced and scaled up as needed. Jenkins helps with collaborative development, visibility, and continuous integration and deployment. By using this setup, we can get our terraform  to market faster, save resources, optimize costs, and make sure we're meeting security standards. Overall, it helps organizations adapt quickly to changing needs in software development and operations.
+CI/CD pipeline for terraform helps automate the process of building, testing, and deploying changes to infrastructure. It makes everything faster, more reliable, and consistent across different environments. We will use Jenkins along with Terraform, which lets us write code to define our infrastructure. This setup helps us make sure that our infrastructure can be easily reproduced and scaled up as needed. Jenkins helps with collaborative development, visibility, and continuous integration and deployment. By using this setup, we can get our terraform  to market faster, save resources, optimize costs, and make sure we're meeting security standards. Overall, it helps organizations adapt quickly to changing needs in software development and operations.
 ## Setting Up the Environment
 To get started, we'll set up a Jenkins server running in a Docker container. We'll create a Dockerfile to define how our Jenkins server should be configured. This file will include all the things Jenkins needs to run smoothly, as well as the Terraform CLI. While Jenkins provides a Docker image that works out of the box, we need to tweak it a bit to make sure it can also run Terraform.
 
@@ -64,6 +64,7 @@ docker run -d -p 8080:8080 --name jenkins-server jenkins-server
 ![localhost](screenshot/localhost.png)
 5. Access the jenkins server directly inside the container and retrieve the initial jenkins admin password
 ![jenkins-pass](screenshot/jpass.png)
+
 6. install suggested plugins, create first admin user and access jenkins
 ![jenkins-homepage](screenshot/jhome.png)
 
